@@ -100,6 +100,10 @@ chromosome-cell-pipeline/
 └── requirements.txt
 ```
 
+## Author
+
+**Almotasem Bellah Younis** — [ORCID](https://orcid.org/0000-0003-2070-2811) · [GitHub](https://github.com/mojo8787)
+
 ## Citation
 
 See [CITATION.cff](CITATION.cff) for citation metadata.
