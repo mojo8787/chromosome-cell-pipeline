@@ -77,6 +77,10 @@ with tab2:
 # --- About ---
 with tab3:
     st.header("About")
+    st.info(
+        "This is an independent demo project and is not affiliated with, "
+        "endorsed by, or reviewed by IMBA or the Gerlich lab."
+    )
     st.markdown("""
     This demo combines two pipelines:
 

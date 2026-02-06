@@ -8,6 +8,8 @@
 
 A combined genomics and microscopy analysis pipeline demonstrating end-to-end Hi-C chromatin analysis and nuclei segmentation. Inspired by chromosome organization workflows; designed as a reproducible demo pipeline for Hi-C + microscopy analysis.
 
+> *This is an independent demo project and is not affiliated with, endorsed by, or reviewed by IMBA or the Gerlich lab.*
+
 ## Overview
 
 This repository contains two integrated pipelines:
