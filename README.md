@@ -1,6 +1,9 @@
 # Chromosome + Cell Mini-Pipeline
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18500690.svg)](https://doi.org/10.5281/zenodo.18500690)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![GitHub release](https://img.shields.io/github/v/release/mojo8787/chromosome-cell-pipeline)](https://github.com/mojo8787/chromosome-cell-pipeline/releases)
 
 A combined genomics and microscopy analysis pipeline demonstrating end-to-end Hi-C chromatin analysis and nuclei segmentation, built for reproducibility and alignment with chromosome organization research (e.g., [HiCognition](https://www.hicognition.com) at the Gerlich lab, IMBA).
 
