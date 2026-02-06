@@ -13,6 +13,18 @@ This repository contains two integrated pipelines:
 
 Both pipelines feed into a unified **Streamlit dashboard** for interactive exploration.
 
+## Sample Outputs
+
+**Hi-C contact matrix** (HFF Micro-C, chr1):
+
+![Hi-C heatmap](docs/sample_outputs/heatmap.png)
+
+**Nuclei segmentation overlays** (BBBC039, U2OS Hoechst):
+
+![Nuclei overlay 1](docs/sample_outputs/nuclei_overlay_1.png)
+
+![Nuclei overlay 2](docs/sample_outputs/nuclei_overlay_2.png)
+
 ## Setup
 
 ```bash
