@@ -1,0 +1,2 @@
+chromosomes,binsize,n_bins,n_pixels,sparsity
+"['chr2', 'chr17']",100000,3255,3255,0.9996927803379416

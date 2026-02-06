@@ -16,3 +16,20 @@ microscopy:
   bbbc039_url: "https://data.broadinstitute.org/bbbc/BBBC039/images.zip"
   subset_size: 20  # Use first N images for fast demo (set to null for all)
   stardist_model: "2D_versatile_he"
+
+vlm:
+  backend: "openai"  # openai or anthropic
+  model: "gpt-4o"  # gpt-4o for OpenAI; claude-3-5-sonnet for Anthropic
+  api_key_env: "OPENAI_API_KEY"
+  max_images: 5  # limit for demo to control API cost; null for all
+  prompt: "Describe the nuclei morphology, chromatin distribution, and any notable phenotypic features in this fluorescence microscopy image. Be concise."
+
+qc_thresholds:
+  hic:
+    min_bins: 100
+    max_sparsity: 0.9999
+  microscopy:
+    min_nuclei_per_image: 20
+    min_images: 5
+    circularity_low: 0.6
+    circularity_high: 0.95

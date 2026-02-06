@@ -21,11 +21,13 @@ Both pipelines feed into a unified **Streamlit dashboard** for interactive explo
 
 ### Dashboard
 
-The dashboard (`streamlit run app.py`) has three tabs:
+The dashboard (`streamlit run app.py`) has five tabs:
 
+- **QC Dashboard** — Shared QC view for both pipelines; pass/warn/fail flags and thresholds
 - **Hi-C Explorer** — Interactive contact heatmap, distance-decay plot, and QC stats table
 - **Nuclei Analyzer** — Nuclei features table, per-image summary stats, and segmentation overlays
-- **About** — Quick reference and setup instructions
+- **Integration** — Morphology–chromatin link: nuclei stratified by area/circularity with synthetic Hi-C patterns (conceptual demo)
+- **About** — Joint workflow diagram and setup instructions
 
 ## Sample Outputs
 
@@ -78,7 +80,13 @@ streamlit run app.py
    python scripts/03_microscopy_pipeline.py
    ```
 
-3. **Launch dashboard**
+3. **VLM analysis (optional)** — requires `OPENAI_API_KEY`; set `ANTHROPIC_API_KEY` if using Anthropic backend
+   ```bash
+   export OPENAI_API_KEY=your_key
+   python scripts/05_vlm_analysis.py
+   ```
+
+4. **Launch dashboard**
    ```bash
    streamlit run app.py
    ```
@@ -89,6 +97,8 @@ streamlit run app.py
 |----------|---------|
 | **Hi-C** | `output/hic/heatmap.png`, `heatmap.html`, `distance_decay.html`, `qc_stats.csv` |
 | **Microscopy** | `output/microscopy/nuclei_features.csv`, `summary_stats.csv`, `overlays/*.png` |
+| **VLM** | `output/microscopy/vlm_output.csv` (descriptions + embeddings) |
+| **Integration** | In-dashboard only (morphology stratification + synthetic Hi-C + VLM phenotypes) |
 
 ## Configuration
 
@@ -96,6 +106,8 @@ Key options in `config.yaml`:
 
 - **Hi-C:** `resolution` (100 kb), `chromosomes` (chr2, chr17), `download_dataset`
 - **Microscopy:** `subset_size` (20 images for demo; set to `null` for all), `stardist_model`
+- **VLM:** `backend` (openai/anthropic), `model`, `api_key_env`, `max_images`, `prompt`
+- **QC thresholds:** `qc_thresholds.hic` (min_bins, max_sparsity), `qc_thresholds.microscopy` (min_nuclei_per_image, min_images, circularity range)
 
 If StarDist or TensorFlow is unavailable, the microscopy pipeline falls back to watershed-based segmentation.
 
@@ -128,6 +140,10 @@ Datasets are **downloaded at runtime**; not redistributed in this repository.
 
 **Citations:** BBBC — Ljosa V, Sokolnicki KL, Carpenter AE (2012). *Nature Methods* 9(7):637. HFF Micro-C — 4D Nucleome Consortium; see cooltools documentation.
 
+## Deploying Publicly
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for instructions on deploying to Streamlit Community Cloud or other hosts. The app includes `deploy_data/` with sample outputs so it works out of the box for public visitors.
+
 ## Project Structure
 
 ```
@@ -137,13 +153,15 @@ chromosome-cell-pipeline/
 ├── requirements.txt
 ├── environment.yml     # Optional conda env
 ├── CITATION.cff        # Citation metadata
+├── deploy_data/        # Sample outputs for public deployment
 ├── docs/
 │   └── sample_outputs/ # Example figures for README
 ├── scripts/
 │   ├── 01_download_data.py
 │   ├── 02_hic_pipeline.py
 │   ├── 03_microscopy_pipeline.py
-│   └── 04_generate_outputs.py
+│   ├── 04_generate_outputs.py
+│   └── 05_vlm_analysis.py
 ├── data/               # Downloaded (gitignored)
 └── output/             # Generated figures (gitignored)
 ```
