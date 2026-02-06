@@ -1,0 +1,22 @@
+{
+  "creators": [
+    {
+      "name": "Younis, Almotasem Bellah",
+      "affiliation": "Independent Researcher",
+      "orcid": "0000-0003-2070-2811"
+    }
+  ],
+  "title": "Chromosome + Cell Mini-Pipeline",
+  "description": "A combined genomics and microscopy analysis pipeline demonstrating end-to-end Hi-C chromatin analysis and nuclei segmentation. Uses cooltools/cooler for Hi-C (compatible with HiCognition) and StarDist for nuclei segmentation. Built for reproducibility and alignment with chromosome organization research.",
+  "keywords": [
+    "Hi-C",
+    "chromatin",
+    "cooler",
+    "cooltools",
+    "nuclei segmentation",
+    "StarDist",
+    "microscopy",
+    "bioinformatics"
+  ],
+  "license": "MIT"
+}

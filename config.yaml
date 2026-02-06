@@ -1,0 +1,18 @@
+# Chromosome + Cell Mini-Pipeline Configuration
+# Paths and parameters for reproducibility
+
+paths:
+  data_dir: "./data"
+  hic_dir: "./data/hic"
+  microscopy_dir: "./data/microscopy"
+  output_dir: "./output"
+
+hic:
+  resolution: 100000  # 100 kb (manageable for demo)
+  chromosomes: ["chr2", "chr17"]  # HFF_MicroC has chr2, chr17
+  download_dataset: "HFF_MicroC"
+
+microscopy:
+  bbbc039_url: "https://data.broadinstitute.org/bbbc/BBBC039/images.zip"
+  subset_size: 20  # Use first N images for fast demo (set to null for all)
+  stardist_model: "2D_versatile_he"
