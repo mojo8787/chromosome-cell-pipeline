@@ -10,7 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 
-import streamlit as st
+import streamlit as st  # noqa: E402
 
 st.set_page_config(
     page_title="Chromosome + Cell Pipeline",
@@ -21,7 +21,7 @@ st.set_page_config(
 st.title("Chromosome + Cell Mini-Pipeline")
 st.caption(
     "Hi-C chromatin analysis + microscopy nuclei segmentation | "
-    "Compatible with [HiCognition](https://www.hicognition.com) (Gerlich lab)"
+    "Uses cooler format; designed for conceptual compatibility with tools such as [HiCognition](https://www.hicognition.com)"
 )
 
 tab1, tab2, tab3 = st.tabs(["Hi-C Explorer", "Nuclei Analyzer", "About"])
@@ -82,7 +82,7 @@ with tab3:
 
     1. **Hi-C Genomics** — Load, QC, and visualize Hi-C contact matrices using
        [cooltools](https://cooltools.readthedocs.io/) and the
-       [cooler](https://github.com/open2c/cooler) format (same as HiCognition).
+       [cooler](https://github.com/open2c/cooler) format.
 
     2. **Microscopy** — Segment nuclei from fluorescence images using
        [StarDist](https://github.com/stardist/stardist), with feature extraction.

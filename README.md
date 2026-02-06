@@ -4,14 +4,15 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![GitHub release](https://img.shields.io/github/v/release/mojo8787/chromosome-cell-pipeline)](https://github.com/mojo8787/chromosome-cell-pipeline/releases)
+[![CI](https://github.com/mojo8787/chromosome-cell-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/mojo8787/chromosome-cell-pipeline/actions/workflows/ci.yml)
 
-A combined genomics and microscopy analysis pipeline demonstrating end-to-end Hi-C chromatin analysis and nuclei segmentation, built for reproducibility and alignment with chromosome organization research (e.g., [HiCognition](https://www.hicognition.com) at the Gerlich lab, IMBA).
+A combined genomics and microscopy analysis pipeline demonstrating end-to-end Hi-C chromatin analysis and nuclei segmentation. Inspired by chromosome organization workflows; designed as a reproducible demo pipeline for Hi-C + microscopy analysis.
 
 ## Overview
 
 This repository contains two integrated pipelines:
 
-1. **Hi-C Genomics Pipeline** — Load, QC, and visualize Hi-C contact matrices using [cooltools](https://cooltools.readthedocs.io/) and the [cooler](https://github.com/open2c/cooler) format (compatible with HiCognition).
+1. **Hi-C Genomics Pipeline** — Load, QC, and visualize Hi-C contact matrices using [cooltools](https://cooltools.readthedocs.io/) and the [cooler](https://github.com/open2c/cooler) format (commonly used in Hi-C analysis; conceptually compatible with interactive exploration tools such as [HiCognition](https://www.hicognition.com)).
 2. **Microscopy Pipeline** — Segment nuclei from fluorescence microscopy images using [StarDist](https://github.com/stardist/stardist), with feature extraction and visualization.
 
 Both pipelines feed into a unified **Streamlit dashboard** for interactive exploration.
@@ -67,7 +68,7 @@ streamlit run app.py
    ```bash
    python scripts/01_download_data.py
    ```
-   Downloads HFF Micro-C (~145 MB) via cooltools and BBBC039 nuclei (~78 MB) from Broad Institute.
+   Downloads HFF Micro-C (~145 MB) via cooltools and BBBC039 (~78 MB) from Broad Institute. Data is fetched at runtime; not included in this repo. See [Data Sources](#data-sources) for citations and terms.
 
 2. **Run pipelines**
    ```bash
@@ -96,17 +97,34 @@ Key options in `config.yaml`:
 
 If StarDist or TensorFlow is unavailable, the microscopy pipeline falls back to watershed-based segmentation.
 
+## Limitations
+
+Demo pipeline; not optimized for production-scale datasets yet.
+
+## Reproducibility
+
+- **Tested:** Python 3.10+, macOS / Linux
+- **Dependencies:** See `requirements.txt` (minimum versions; pin exact versions for strict reproducibility)
+- **Expected runtime:** ~5–10 min for full pipeline (download + both analyses)
+- **Memory:** ~2–4 GB peak
+
 ## What This Demonstrates
 
 - **End-to-end pipelines** — Raw data → QC → analysis → visualization
 - **Robust Python tooling** — Config-driven, documented, reproducible
 - **Microscopy + genomics** — Bridges chromosome organization and quantitative image analysis
-- **HiCognition alignment** — Uses cooler format; compatible with Gerlich lab workflows
+- **Standard Hi-C tooling** — Uses cooler format and cooltools workflows; designed for conceptual compatibility with interactive exploration tools such as HiCognition
 
 ## Data Sources
 
-- **Hi-C:** HFF Micro-C (cooltools test data); 4D Nucleome / open2c ecosystem
-- **Microscopy:** BBBC039 — U2OS nuclei, Hoechst stain (Broad Institute)
+Datasets are **downloaded at runtime**; not redistributed in this repository.
+
+| Dataset | Source | License / Terms |
+|---------|--------|-----------------|
+| **HFF Micro-C** | [cooltools](https://cooltools.readthedocs.io/) test data; 4D Nucleome / open2c ecosystem | 4DN data use policy |
+| **BBBC039** | [Broad Institute](https://bbbc.broadinstitute.org/BBBC039) — U2OS nuclei, Hoechst stain | CC0 1.0 (public domain) |
+
+**Citations:** BBBC — Ljosa V, Sokolnicki KL, Carpenter AE (2012). *Nature Methods* 9(7):637. HFF Micro-C — 4D Nucleome Consortium; see cooltools documentation.
 
 ## Project Structure
 

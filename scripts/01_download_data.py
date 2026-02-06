@@ -35,6 +35,7 @@ def download_hic(config):
 
     try:
         import cooltools
+
         dataset = config["hic"]["download_dataset"]
         print(f"Downloading {dataset} via cooltools...")
         cool_file = cooltools.download_data(dataset, cache=True, data_dir=str(hic_dir))
@@ -42,7 +43,9 @@ def download_hic(config):
         return True
     except Exception as e:
         print(f"  cooltools download failed: {e}")
-        print("  Fallback: You can manually download from 4D Nucleome or open2c examples.")
+        print(
+            "  Fallback: You can manually download from 4D Nucleome or open2c examples."
+        )
         return False
 
 
@@ -71,6 +74,7 @@ def download_bbbc039(config):
     print("Extracting BBBC039...")
     try:
         import shutil
+
         with zipfile.ZipFile(zip_path, "r") as z:
             z.extractall(microscopy_dir)
         # Collect all .tif files (may be in subdir or root)

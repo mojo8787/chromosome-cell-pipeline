@@ -7,7 +7,7 @@ Loads .mcool data, performs QC, and generates visualizations:
 - Distance decay (contacts vs genomic distance)
 - QC stats
 
-Uses cooltools and cooler (compatible with HiCognition format).
+Uses cooltools and cooler (standard Hi-C format).
 
 Usage:
     python scripts/02_hic_pipeline.py
@@ -19,7 +19,6 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import plotly.express as px
 import plotly.graph_objects as go
 import yaml
 
@@ -113,7 +112,7 @@ def run_pipeline(config):
         )
     )
     fig.update_layout(
-        title=f"Hi-C Contact Matrix — {chrom} @ {resolution/1000:.0f} kb",
+        title=f"Hi-C Contact Matrix — {chrom} @ {resolution / 1000:.0f} kb",
         xaxis_title="Genomic position",
         yaxis_title="Genomic position",
         height=500,
@@ -124,7 +123,7 @@ def run_pipeline(config):
     fig_mpl, ax = plt.subplots(figsize=(8, 7))
     im = ax.imshow(np.log1p(mat), cmap="Reds", aspect="equal")
     plt.colorbar(im, ax=ax, label="log(1 + contacts)")
-    ax.set_title(f"Hi-C Contact Matrix — {chrom} @ {resolution/1000:.0f} kb")
+    ax.set_title(f"Hi-C Contact Matrix — {chrom} @ {resolution / 1000:.0f} kb")
     ax.set_xlabel("Genomic position")
     ax.set_ylabel("Genomic position")
     fig_mpl.savefig(output_dir / "heatmap.png", dpi=150, bbox_inches="tight")
