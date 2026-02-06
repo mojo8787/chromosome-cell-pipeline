@@ -16,9 +16,17 @@ This repository contains two integrated pipelines:
 
 Both pipelines feed into a unified **Streamlit dashboard** for interactive exploration.
 
+### Dashboard
+
+The dashboard (`streamlit run app.py`) has three tabs:
+
+- **Hi-C Explorer** — Interactive contact heatmap, distance-decay plot, and QC stats table
+- **Nuclei Analyzer** — Nuclei features table, per-image summary stats, and segmentation overlays
+- **About** — Quick reference and setup instructions
+
 ## Sample Outputs
 
-**Hi-C contact matrix** (HFF Micro-C, chr1):
+**Hi-C contact matrix** (HFF Micro-C, chr2/chr17):
 
 ![Hi-C heatmap](docs/sample_outputs/heatmap.png)
 
@@ -72,6 +80,22 @@ streamlit run app.py
    streamlit run app.py
    ```
 
+## Generated Outputs
+
+| Pipeline | Outputs |
+|----------|---------|
+| **Hi-C** | `output/hic/heatmap.png`, `heatmap.html`, `distance_decay.html`, `qc_stats.csv` |
+| **Microscopy** | `output/microscopy/nuclei_features.csv`, `summary_stats.csv`, `overlays/*.png` |
+
+## Configuration
+
+Key options in `config.yaml`:
+
+- **Hi-C:** `resolution` (100 kb), `chromosomes` (chr2, chr17), `download_dataset`
+- **Microscopy:** `subset_size` (20 images for demo; set to `null` for all), `stardist_model`
+
+If StarDist or TensorFlow is unavailable, the microscopy pipeline falls back to watershed-based segmentation.
+
 ## What This Demonstrates
 
 - **End-to-end pipelines** — Raw data → QC → analysis → visualization
@@ -90,14 +114,18 @@ streamlit run app.py
 chromosome-cell-pipeline/
 ├── app.py              # Streamlit dashboard
 ├── config.yaml         # Paths and parameters
+├── requirements.txt
+├── environment.yml     # Optional conda env
+├── CITATION.cff        # Citation metadata
+├── docs/
+│   └── sample_outputs/ # Example figures for README
 ├── scripts/
 │   ├── 01_download_data.py
 │   ├── 02_hic_pipeline.py
 │   ├── 03_microscopy_pipeline.py
 │   └── 04_generate_outputs.py
 ├── data/               # Downloaded (gitignored)
-├── output/             # Generated figures (gitignored)
-└── requirements.txt
+└── output/             # Generated figures (gitignored)
 ```
 
 ## Author
