@@ -34,16 +34,100 @@ st.set_page_config(
     page_title="Chromosome + Cell Pipeline",
     page_icon="🧬",
     layout="wide",
+    initial_sidebar_state="collapsed",
 )
 
-st.title("Chromosome + Cell Mini-Pipeline")
-st.caption(
-    "Hi-C chromatin analysis + microscopy nuclei segmentation | "
-    "Uses cooler format; designed for conceptual compatibility with tools such as [HiCognition](https://www.hicognition.com)"
-)
+# Custom CSS for a more polished, encouraging UI
+st.markdown("""
+<style>
+    /* Hero section */
+    .hero {
+        background: linear-gradient(135deg, #0d7377 0%, #14a3a8 50%, #0d7377 100%);
+        padding: 1.5rem 2rem;
+        border-radius: 12px;
+        margin-bottom: 2rem;
+        color: white;
+        text-align: center;
+        box-shadow: 0 4px 20px rgba(13, 115, 119, 0.25);
+    }
+    .hero h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0;
+        letter-spacing: -0.5px;
+    }
+    .hero p {
+        font-size: 1rem;
+        margin: 0.5rem 0 0;
+        opacity: 0.95;
+    }
+    /* Card-style sections */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+        background-color: #f8fafa;
+        padding: 8px;
+        border-radius: 10px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        border-radius: 8px;
+        padding: 10px 20px;
+        font-weight: 600;
+    }
+    /* Metric cards */
+    [data-testid="stMetricValue"] {
+        font-size: 1.5rem !important;
+        font-weight: 700 !important;
+        color: #0d7377 !important;
+    }
+    /* Success / info boxes */
+    .stSuccess, .stInfo {
+        border-radius: 10px;
+        border-left: 4px solid #0d7377;
+    }
+    /* Buttons */
+    .stButton > button {
+        border-radius: 8px;
+        font-weight: 600;
+        padding: 0.5rem 1.5rem;
+        transition: all 0.2s ease;
+    }
+    .stButton > button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(13, 115, 119, 0.3);
+    }
+    /* Section headers */
+    h2, h3 {
+        color: #1a1a2e !important;
+        font-weight: 600 !important;
+    }
+    /* Upload area */
+    [data-testid="stFileUploader"] {
+        border: 2px dashed #0d7377;
+        border-radius: 12px;
+        padding: 2rem;
+        background: #f8fafa;
+    }
+    /* CTA callout */
+    .cta-box {
+        background: linear-gradient(135deg, #e8f6f6 0%, #f0f7f7 100%);
+        border: 1px solid #0d7377;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# Hero section
+st.markdown("""
+<div class="hero">
+    <h1>🧬 Chromosome + Cell Pipeline</h1>
+    <p>Bridge 3D imaging with genomic insights — Hi-C chromatin analysis, nuclei segmentation, and AI-powered phenotype interpretation</p>
+</div>
+""", unsafe_allow_html=True)
 
 tab1, tab2, tab3, tab4, tab5 = st.tabs(
-    ["QC Dashboard", "Hi-C Explorer", "Nuclei Analyzer", "Integration", "About"]
+    ["📊 QC Dashboard", "🔬 Hi-C Explorer", "🔭 Nuclei Analyzer", "✨ AI Integration", "ℹ️ About"]
 )
 
 # --- QC Dashboard ---
@@ -65,9 +149,8 @@ with tab1:
 
     if not hic_ok and not micro_ok:
         st.info(
-            "Run the pipeline first: `python scripts/04_generate_outputs.py` or "
-            "`python scripts/01_download_data.py` then `02_hic_pipeline.py` and "
-            "`03_microscopy_pipeline.py`"
+            "**Welcome!** Run the pipeline to generate data: `python scripts/04_generate_outputs.py` "
+            "or run the download and analysis scripts step by step."
         )
     else:
         col_hic, col_micro = st.columns(2)
@@ -194,8 +277,8 @@ with tab2:
             st.dataframe(qc, use_container_width=True, hide_index=True)
     else:
         st.info(
-            "Run the pipeline first: `python scripts/01_download_data.py` then "
-            "`python scripts/02_hic_pipeline.py`"
+            "Run the Hi-C pipeline to see the chromatin heatmap: `python scripts/01_download_data.py` "
+            "then `python scripts/02_hic_pipeline.py`"
         )
 
 # --- Nuclei Analyzer ---
@@ -285,13 +368,17 @@ with tab3:
                 )
     else:
         st.info(
-            "Run the pipeline first: `python scripts/01_download_data.py` then "
-            "`python scripts/03_microscopy_pipeline.py`"
+            "Run the microscopy pipeline to see nuclei segmentation: `python scripts/01_download_data.py` "
+            "then `python scripts/03_microscopy_pipeline.py`"
         )
 
 # --- Integration ---
 with tab4:
-    st.header("Morphology–Chromatin Integration")
+    st.header("AI-Powered Phenotype Analysis")
+    st.markdown(
+        "Use Vision-Language Models to automatically describe nuclei morphology, chromatin distribution, "
+        "and phenotypic features in your microscopy images — no manual annotation needed."
+    )
     micro_output = _resolve_output("microscopy")
     # VLM output written to output/microscopy/; may also exist in deploy_data
     vlm_output_path = ROOT / "output" / "microscopy" / "vlm_output.csv"
@@ -300,7 +387,8 @@ with tab4:
     overlay_dir = micro_output / "overlays"
 
     # Run VLM Analysis from Streamlit
-    st.subheader("VLM Analysis")
+    st.markdown("---")
+    st.subheader("Get started")
     # Use Streamlit secrets if set (server-side key); otherwise show input
     try:
         api_key_from_secrets = st.secrets.get("OPENAI_API_KEY", "")
@@ -312,21 +400,22 @@ with tab4:
             "OpenAI API Key",
             type="password",
             placeholder="sk-...",
-            help="Enter your OpenAI API key, or add OPENAI_API_KEY to Streamlit secrets for server-side use.",
+            help="Enter your OpenAI API key to enable AI analysis. Your key is never stored.",
             key="vlm_api_key",
         )
     else:
-        st.caption("Using server-side API key (from Streamlit secrets).")
+        st.success("✓ API key configured — you're ready to analyze images.")
 
     # Option 1: Upload your own images
-    st.markdown("**Upload images** for VLM phenotype analysis (PNG/JPG recommended):")
+    st.markdown("#### 📤 Upload your microscopy images")
+    st.markdown("Drop your images below for instant AI phenotype analysis. Supports PNG, JPG, and TIFF.")
     uploaded_files = st.file_uploader(
         "Choose microscopy images (PNG, JPG, TIFF)",
         type=["png", "jpg", "jpeg", "tif", "tiff"],
         accept_multiple_files=True,
         key="vlm_upload",
     )
-    if st.button("Analyze uploaded images", key="vlm_upload_btn"):
+    if st.button("🔍 Analyze with AI", key="vlm_upload_btn", type="primary"):
         if not api_key or not str(api_key).strip():
             st.warning("Please enter your OpenAI API key or configure Streamlit secrets.")
         elif not uploaded_files:
@@ -345,24 +434,40 @@ with tab4:
                 with open(ROOT / "config.yaml") as f:
                     vlm_config = yaml.safe_load(f)
                 with tempfile.TemporaryDirectory() as tmpdir:
+                    tmpdir_path = Path(tmpdir).resolve()
                     paths = []
-                    for f in uploaded_files[:10]:  # limit to 10
-                        p = Path(tmpdir) / f.name
-                        p.write_bytes(f.getvalue())
+                    max_file_size = 50 * 1024 * 1024  # 50 MB per file
+                    for i, f in enumerate(uploaded_files[:10]):  # limit to 10
+                        data = f.getvalue()
+                        if len(data) > max_file_size:
+                            continue  # Skip oversized files
+                        # Sanitize filename to prevent path traversal
+                        safe_name = Path(f.name).name or f"image_{i}"
+                        p = (tmpdir_path / safe_name).resolve()
+                        if not str(p).startswith(str(tmpdir_path)):
+                            continue  # Skip invalid filenames
+                        p.write_bytes(data)
                         paths.append(p)
-                    df = vlm_module.analyze_images(
-                        paths, str(api_key).strip(), vlm_config
-                    )
+                    df = None
+                    if paths:
+                        df = vlm_module.analyze_images(
+                            paths, str(api_key).strip(), vlm_config
+                        )
                 if df is not None and len(df) > 0:
                     st.session_state["vlm_uploaded_results"] = df
-                    st.success(f"Analyzed {len(df)} image(s).")
+                    st.success(f"✓ Successfully analyzed {len(df)} image(s)! Results below.")
                     st.rerun()
+                elif not paths:
+                    st.error("No valid images to analyze.")
                 else:
                     st.error("Analysis failed. Check the terminal for details.")
 
     # Option 2: Run on pipeline overlays (when available)
     if overlay_dir.exists() and list(overlay_dir.glob("*.png")):
-        if st.button("Run VLM on pipeline overlays", key="vlm_run_btn"):
+        st.markdown("---")
+        st.markdown("#### 📁 Or analyze pipeline overlays")
+        st.caption("Use pre-segmented overlays from the microscopy pipeline.")
+        if st.button("Run AI on pipeline overlays", key="vlm_run_btn"):
             if api_key and str(api_key).strip():
                 import importlib.util
                 import yaml
@@ -415,10 +520,9 @@ with tab4:
         import pandas as pd
         import plotly.graph_objects as go
         from sklearn.cluster import KMeans
-        st.subheader("VLM Phenotype Descriptions")
+        st.subheader("AI phenotype descriptions")
         st.caption(
-            "Vision-Language Model interpretations provide complementary "
-            "phenotype characterization alongside morphology-based strata."
+            "Each image was analyzed by a Vision-Language Model. Expand any row to read the full description."
         )
         if "vlm_uploaded_results" in st.session_state:
             if st.button("Clear uploaded results", key="vlm_clear"):
@@ -461,8 +565,8 @@ with tab4:
             st.plotly_chart(fig_vlm, use_container_width=True)
     else:
         st.info(
-            "Run `python scripts/05_vlm_analysis.py` to add VLM phenotype analysis. "
-            "Requires OPENAI_API_KEY."
+            "👆 **Upload images above** and click **Analyze with AI** to get started. "
+            "Or run the pipeline overlays analysis if you have pre-segmented data."
         )
 
     if (micro_output / "nuclei_features.csv").exists():
@@ -545,12 +649,18 @@ with tab4:
         st.plotly_chart(fig_bar, use_container_width=True)
     else:
         st.info(
-            "Run the microscopy pipeline first: `python scripts/03_microscopy_pipeline.py`"
+            "Run the microscopy pipeline to see morphology–chromatin integration: "
+            "`python scripts/03_microscopy_pipeline.py`"
         )
 
 # --- About ---
 with tab5:
-    st.header("About")
+    st.header("About this pipeline")
+    st.markdown(
+        "A combined genomics and microscopy analysis platform that bridges "
+        "**chromosome organization** (Hi-C) with **quantitative image analysis** (nuclei segmentation) "
+        "and **AI-powered phenotype interpretation** (Vision-Language Models)."
+    )
     st.info(
         "This is an independent demo project and is not affiliated with, "
         "endorsed by, or reviewed by IMBA or the Gerlich lab."
