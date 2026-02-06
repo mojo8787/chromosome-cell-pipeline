@@ -1,5 +1,7 @@
 # Chromosome + Cell Mini-Pipeline
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18500690.svg)](https://doi.org/10.5281/zenodo.18500690)
+
 A combined genomics and microscopy analysis pipeline demonstrating end-to-end Hi-C chromatin analysis and nuclei segmentation, built for reproducibility and alignment with chromosome organization research (e.g., [HiCognition](https://www.hicognition.com) at the Gerlich lab, IMBA).
 
 ## Overview
