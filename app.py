@@ -38,7 +38,8 @@ st.set_page_config(
 )
 
 # Custom CSS for a more polished, encouraging UI
-st.markdown("""
+st.markdown(
+    """
 <style>
     /* Hero section */
     .hero {
@@ -116,37 +117,40 @@ st.markdown("""
         margin: 1rem 0;
     }
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
-# Sidebar
+# Sidebar — clickable navigation
 with st.sidebar:
     st.markdown("## 🧬 Chromosome + Cell Pipeline")
     st.markdown("---")
-    st.markdown("**Sections**")
-    st.markdown("""
-    - 📊 **QC Dashboard** — Quality control metrics
-    - 🔬 **Hi-C Explorer** — Chromatin heatmaps
-    - 🔭 **Nuclei Analyzer** — Segmentation & features
-    - ✨ **AI Integration** — VLM phenotype analysis
-    - ℹ️ **About** — Pipeline info & setup
-    """)
-    st.markdown("---")
-    st.caption("Use the tabs above to switch sections.")
+    section = st.radio(
+        "**Go to**",
+        [
+            "📊 QC Dashboard",
+            "🔬 Hi-C Explorer",
+            "🔭 Nuclei Analyzer",
+            "✨ AI Integration",
+            "ℹ️ About",
+        ],
+        label_visibility="collapsed",
+        key="sidebar_nav",
+    )
 
 # Hero section
-st.markdown("""
+st.markdown(
+    """
 <div class="hero">
     <h1>🧬 Chromosome + Cell Pipeline</h1>
     <p>Bridge 3D imaging with genomic insights — Hi-C chromatin analysis, nuclei segmentation, and AI-powered phenotype interpretation</p>
 </div>
-""", unsafe_allow_html=True)
-
-tab1, tab2, tab3, tab4, tab5 = st.tabs(
-    ["📊 QC Dashboard", "🔬 Hi-C Explorer", "🔭 Nuclei Analyzer", "✨ AI Integration", "ℹ️ About"]
+""",
+    unsafe_allow_html=True,
 )
 
 # --- QC Dashboard ---
-with tab1:
+if section == "📊 QC Dashboard":
     st.header("QC Dashboard")
     import yaml
 
@@ -259,10 +263,12 @@ with tab1:
                 st.warning(f)
 
 # --- Hi-C Explorer ---
-with tab2:
+elif section == "🔬 Hi-C Explorer":
     st.header("Hi-C Chromatin Explorer")
     hic_output = _resolve_output("hic")
-    has_heatmap = (hic_output / "heatmap.html").exists() or (hic_output / "heatmap.png").exists()
+    has_heatmap = (hic_output / "heatmap.html").exists() or (
+        hic_output / "heatmap.png"
+    ).exists()
     if has_heatmap:
         import pandas as pd
 
@@ -297,7 +303,7 @@ with tab2:
         )
 
 # --- Nuclei Analyzer ---
-with tab3:
+elif section == "🔭 Nuclei Analyzer":
     st.header("Nuclei Segmentation Analyzer")
     micro_output = _resolve_output("microscopy")
     if (micro_output / "nuclei_features.csv").exists():
@@ -378,9 +384,7 @@ with tab3:
                 st.image(str(sel), width="stretch")
             cols = st.columns(min(3, len(overlays)))
             for i, p in enumerate(overlays[:6]):
-                cols[i % 3].image(
-                    str(p), caption=p.stem[:30] + "...", width="stretch"
-                )
+                cols[i % 3].image(str(p), caption=p.stem[:30] + "...", width="stretch")
     else:
         st.info(
             "Run the microscopy pipeline to see nuclei segmentation: `python scripts/01_download_data.py` "
@@ -388,7 +392,7 @@ with tab3:
         )
 
 # --- Integration ---
-with tab4:
+elif section == "✨ AI Integration":
     st.header("AI-Powered Phenotype Analysis")
     st.markdown(
         "Use Vision-Language Models to automatically describe nuclei morphology, chromatin distribution, "
@@ -399,6 +403,7 @@ with tab4:
     # Rate limiting: load config and init session state
     import time
     import yaml as _yaml
+
     _rate_cfg = {}
     if (ROOT / "config.yaml").exists():
         with open(ROOT / "config.yaml") as _f:
@@ -416,15 +421,21 @@ with tab4:
         last = st.session_state["vlm_last_analysis_time"]
         elapsed = time.time() - last
         if count >= _max_analyses:
-            return False, f"Session limit reached ({_max_analyses} analyses). Refresh the page to reset."
+            return (
+                False,
+                f"Session limit reached ({_max_analyses} analyses). Refresh the page to reset.",
+            )
         if last > 0 and elapsed < _min_seconds:
             wait = int(_min_seconds - elapsed)
             return False, f"Please wait {wait} seconds before another analysis."
         return True, None
 
     def _record_analysis():
-        st.session_state["vlm_analysis_count"] = st.session_state.get("vlm_analysis_count", 0) + 1
+        st.session_state["vlm_analysis_count"] = (
+            st.session_state.get("vlm_analysis_count", 0) + 1
+        )
         st.session_state["vlm_last_analysis_time"] = time.time()
+
     # VLM output written to output/microscopy/; may also exist in deploy_data
     vlm_output_path = ROOT / "output" / "microscopy" / "vlm_output.csv"
     if not vlm_output_path.exists():
@@ -454,15 +465,23 @@ with tab4:
     # Usage / rate limit warning
     _remaining = _max_analyses - st.session_state["vlm_analysis_count"]
     if _remaining <= _warn_at and _remaining > 0:
-        st.warning(f"⚠️ {_remaining} analysis(es) remaining this session. Limit: {_max_analyses} per session.")
+        st.warning(
+            f"⚠️ {_remaining} analysis(es) remaining this session. Limit: {_max_analyses} per session."
+        )
     elif _remaining <= 0:
-        st.error(f"Session limit reached ({_max_analyses} analyses). Refresh the page to get a new allowance.")
+        st.error(
+            f"Session limit reached ({_max_analyses} analyses). Refresh the page to get a new allowance."
+        )
     else:
-        st.caption(f"Usage: {st.session_state['vlm_analysis_count']}/{_max_analyses} analyses this session • min {_min_seconds}s between runs")
+        st.caption(
+            f"Usage: {st.session_state['vlm_analysis_count']}/{_max_analyses} analyses this session • min {_min_seconds}s between runs"
+        )
 
     # Option 1: Upload your own images
     st.markdown("#### 📤 Upload your microscopy images")
-    st.markdown("Drop your images below for instant AI phenotype analysis. Supports PNG, JPG, and TIFF.")
+    st.markdown(
+        "Drop your images below for instant AI phenotype analysis. Supports PNG, JPG, and TIFF."
+    )
     uploaded_files = st.file_uploader(
         "Choose microscopy images (PNG, JPG, TIFF)",
         type=["png", "jpg", "jpeg", "tif", "tiff"],
@@ -474,7 +493,9 @@ with tab4:
         if not ok:
             st.error(err)
         elif not api_key or not str(api_key).strip():
-            st.warning("Please enter your OpenAI API key or configure Streamlit secrets.")
+            st.warning(
+                "Please enter your OpenAI API key or configure Streamlit secrets."
+            )
         elif not uploaded_files:
             st.warning("Please upload at least one image.")
         else:
@@ -517,7 +538,9 @@ with tab4:
                     if df is not None and len(df) > 0:
                         _record_analysis()
                         st.session_state["vlm_uploaded_results"] = df
-                        st.success(f"✓ Successfully analyzed {len(df)} image(s)! Results below.")
+                        st.success(
+                            f"✓ Successfully analyzed {len(df)} image(s)! Results below."
+                        )
                         st.rerun()
                     elif not paths:
                         st.error("No valid images to analyze.")
@@ -549,6 +572,7 @@ with tab4:
                         vlm_config = yaml.safe_load(f)
                     # Temporarily set env for the pipeline
                     import os
+
                     prev_key = os.environ.get("OPENAI_API_KEY")
                     os.environ["OPENAI_API_KEY"] = str(api_key).strip()
                     try:
@@ -588,6 +612,7 @@ with tab4:
         import pandas as pd
         import plotly.graph_objects as go
         from sklearn.cluster import KMeans
+
         st.subheader("AI phenotype descriptions")
         st.caption(
             "Each image was analyzed by a Vision-Language Model. View image and description side by side."
@@ -599,10 +624,17 @@ with tab4:
                 st.rerun()
         # View mode: cards or one-at-a-time
         uploaded_imgs = st.session_state.get("vlm_uploaded_images", {})
-        view_mode = st.radio("View", ["All cards", "One at a time"], horizontal=True, key="vlm_view_mode")
+        view_mode = st.radio(
+            "View", ["All cards", "One at a time"], horizontal=True, key="vlm_view_mode"
+        )
         rows_list = list(vlm_df.iterrows())
         if view_mode == "One at a time" and len(rows_list) > 1:
-            sel_idx = st.selectbox("Select image", range(len(rows_list)), format_func=lambda i: rows_list[i][1]["image"], key="vlm_sel")
+            sel_idx = st.selectbox(
+                "Select image",
+                range(len(rows_list)),
+                format_func=lambda i: rows_list[i][1]["image"],
+                key="vlm_sel",
+            )
             rows_list = [rows_list[sel_idx]]
         for idx, (_, row) in enumerate(rows_list):
             img_name = row["image"]
@@ -619,7 +651,12 @@ with tab4:
                 col_img, col_txt = st.columns([1, 2], gap="large")
                 with col_img:
                     if img_src:
-                        st.image(img_src, caption=img_name[:40] + ("..." if len(img_name) > 40 else ""), width="stretch")
+                        st.image(
+                            img_src,
+                            caption=img_name[:40]
+                            + ("..." if len(img_name) > 40 else ""),
+                            width="stretch",
+                        )
                     else:
                         st.caption(f"📷 {img_name}")
                 with col_txt:
@@ -633,10 +670,7 @@ with tab4:
             kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
             vlm_df = vlm_df.copy()
             vlm_df["vlm_cluster"] = kmeans.fit_predict(X)
-            cluster_labels = {
-                i: f"Cluster {i + 1}"
-                for i in range(n_clusters)
-            }
+            cluster_labels = {i: f"Cluster {i + 1}" for i in range(n_clusters)}
             vlm_df["vlm_stratum"] = vlm_df["vlm_cluster"].map(cluster_labels)
             vlm_counts = vlm_df["vlm_stratum"].value_counts().sort_index()
             st.subheader("VLM-derived strata (embedding clusters)")
@@ -747,7 +781,7 @@ with tab4:
         )
 
 # --- About ---
-with tab5:
+else:  # ℹ️ About
     st.header("About this pipeline")
     st.markdown(
         "A combined genomics and microscopy analysis platform that bridges "

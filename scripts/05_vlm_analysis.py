@@ -52,6 +52,7 @@ def _load_image_for_api(image_path: Path) -> tuple[bytes, str]:
         # Load with tifffile for proper 16-bit handling
         try:
             import tifffile
+
             arr = tifffile.imread(str(image_path))
         except Exception:
             arr = np.array(Image.open(image_path))
@@ -77,7 +78,9 @@ def _load_image_for_api(image_path: Path) -> tuple[bytes, str]:
     return data, _media_type(image_path)
 
 
-def get_vlm_description_openai(image_path: Path, prompt: str, model: str, api_key: str) -> str:
+def get_vlm_description_openai(
+    image_path: Path, prompt: str, model: str, api_key: str
+) -> str:
     """Get phenotype description from OpenAI vision model."""
     from openai import OpenAI
 
@@ -103,7 +106,9 @@ def get_vlm_description_openai(image_path: Path, prompt: str, model: str, api_ke
     return response.choices[0].message.content.strip()
 
 
-def get_vlm_description_anthropic(image_path: Path, prompt: str, model: str, api_key: str) -> str:
+def get_vlm_description_anthropic(
+    image_path: Path, prompt: str, model: str, api_key: str
+) -> str:
     """Get phenotype description from Anthropic vision model."""
     import anthropic
 
@@ -168,11 +173,19 @@ def analyze_images(
             if backend == "openai":
                 description = get_vlm_description_openai(path, prompt, model, api_key)
             elif backend == "anthropic":
-                description = get_vlm_description_anthropic(path, prompt, model, api_key)
+                description = get_vlm_description_anthropic(
+                    path, prompt, model, api_key
+                )
             else:
                 return None
             embedding = get_embedding(description, api_key)
-            rows.append({"image": path.name, "description": description, "embedding": json.dumps(embedding)})
+            rows.append(
+                {
+                    "image": path.name,
+                    "description": description,
+                    "embedding": json.dumps(embedding),
+                }
+            )
         except Exception as e:
             last_error = e
             print(f"  Error {path.name}: {e}")
@@ -202,7 +215,9 @@ def run_pipeline(
 
     if not overlay_dir.exists():
         print(f"Overlay directory not found: {overlay_dir}")
-        print("Run the microscopy pipeline first: python scripts/03_microscopy_pipeline.py")
+        print(
+            "Run the microscopy pipeline first: python scripts/03_microscopy_pipeline.py"
+        )
         return None
 
     overlay_paths = sorted(overlay_dir.glob("*.png"))
@@ -223,13 +238,17 @@ def run_pipeline(
 
     api_key = api_key_override or os.environ.get(api_key_env)
     if not api_key:
-        print(f"API key not found. Set {api_key_env} environment variable or pass api_key_override.")
+        print(
+            f"API key not found. Set {api_key_env} environment variable or pass api_key_override."
+        )
         return None
 
     # Embeddings always use OpenAI; use override if provided, else env
     openai_key = api_key_override or os.environ.get("OPENAI_API_KEY")
     if not openai_key:
-        print("OPENAI_API_KEY required for embeddings (used regardless of VLM backend).")
+        print(
+            "OPENAI_API_KEY required for embeddings (used regardless of VLM backend)."
+        )
         return None
 
     if max_images is not None:
