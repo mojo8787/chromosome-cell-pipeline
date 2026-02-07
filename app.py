@@ -445,13 +445,20 @@ elif section == "✨ AI Integration":
     # Run VLM Analysis from Streamlit
     st.markdown("---")
     st.subheader("Get started")
-    # Use Streamlit secrets if set (server-side key); otherwise show input
+    # Use Streamlit secrets (server-side key); server_key_only=true hides user input
     try:
         api_key_from_secrets = st.secrets.get("OPENAI_API_KEY", "")
     except Exception:
         api_key_from_secrets = ""
+    vlm_config_yaml = {}
+    if (ROOT / "config.yaml").exists():
+        import yaml as _yaml
+
+        with open(ROOT / "config.yaml") as _f:
+            vlm_config_yaml = _yaml.safe_load(_f) or {}
+    server_key_only = vlm_config_yaml.get("vlm", {}).get("server_key_only", False)
     api_key = api_key_from_secrets
-    if not api_key:
+    if not api_key and not server_key_only:
         api_key = st.text_input(
             "OpenAI API Key",
             type="password",
@@ -459,8 +466,12 @@ elif section == "✨ AI Integration":
             help="Enter your OpenAI API key to enable AI analysis. Your key is never stored.",
             key="vlm_api_key",
         )
-    else:
+    if api_key:
         st.success("✓ API key configured — you're ready to analyze images.")
+    elif server_key_only:
+        st.error(
+            "AI analysis is not configured. The administrator must add OPENAI_API_KEY to Streamlit secrets."
+        )
 
     # Usage / rate limit warning
     _remaining = _max_analyses - st.session_state["vlm_analysis_count"]
@@ -493,9 +504,12 @@ elif section == "✨ AI Integration":
         if not ok:
             st.error(err)
         elif not api_key or not str(api_key).strip():
-            st.warning(
-                "Please enter your OpenAI API key or configure Streamlit secrets."
-            )
+            if server_key_only:
+                st.error("AI analysis is not configured. Contact the administrator.")
+            else:
+                st.warning(
+                    "Please enter your OpenAI API key or configure Streamlit secrets."
+                )
         elif not uploaded_files:
             st.warning("Please upload at least one image.")
         else:

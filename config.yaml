@@ -21,6 +21,8 @@ vlm:
   backend: "openai"  # openai or anthropic
   model: "gpt-4o"  # gpt-4o for OpenAI; claude-3-5-sonnet for Anthropic
   api_key_env: "OPENAI_API_KEY"
+  # server_key_only: true = hide API key input, use only Streamlit secrets (for public deploy)
+  server_key_only: true
   max_images: 5  # limit for demo to control API cost; null for all
   prompt: "Describe the nuclei morphology, chromatin distribution, and any notable phenotypic features in this fluorescence microscopy image. Be concise."
 
