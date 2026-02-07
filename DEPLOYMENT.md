@@ -2,6 +2,8 @@
 
 This guide explains how to deploy the Streamlit dashboard publicly so others can use it without running anything locally.
 
+> **📋 Full checklist:** See [PUBLIC_DEPLOYMENT_PLAN.md](PUBLIC_DEPLOYMENT_PLAN.md) for best practices, security, and cost control.
+
 ## Option 1: Streamlit Community Cloud (Recommended)
 
 [Streamlit Community Cloud](https://share.streamlit.io/) offers free hosting for Streamlit apps.

@@ -33,9 +33,48 @@ def _media_type(path: Path) -> str:
     ext = path.suffix.lower()
     if ext in (".jpg", ".jpeg"):
         return "image/jpeg"
+    if ext in (".tif", ".tiff"):
+        return "image/tiff"
     if ext in (".gif", ".webp"):
         return f"image/{ext[1:]}"
     return "image/png"
+
+
+def _load_image_for_api(image_path: Path) -> tuple[bytes, str]:
+    """Load image and return (base64_data, mime_type). Converts TIFF to PNG for API compatibility.
+    Normalizes 16-bit microscopy images so they don't appear black."""
+    ext = image_path.suffix.lower()
+    if ext in (".tif", ".tiff"):
+        import io
+        import numpy as np
+        from PIL import Image
+
+        # Load with tifffile for proper 16-bit handling
+        try:
+            import tifffile
+            arr = tifffile.imread(str(image_path))
+        except Exception:
+            arr = np.array(Image.open(image_path))
+        arr = np.atleast_2d(arr)
+        if arr.ndim > 2:
+            arr = arr.squeeze()
+            if arr.ndim > 2:
+                arr = arr[0]
+        arr = arr.astype(np.float64)
+        # Rescale to 0-255 using percentiles (avoids black images from narrow range)
+        p2, p98 = np.percentile(arr, (2, 98))
+        if p98 > p2:
+            arr = np.clip((arr - p2) / (p98 - p2) * 255, 0, 255)
+        else:
+            arr = np.clip(arr - arr.min(), 0, 255) if arr.max() > arr.min() else arr
+        arr = arr.astype(np.uint8)
+        img = Image.fromarray(arr, mode="L")
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        return base64.b64encode(buf.getvalue()).decode("utf-8"), "image/png"
+    with open(image_path, "rb") as f:
+        data = base64.b64encode(f.read()).decode("utf-8")
+    return data, _media_type(image_path)
 
 
 def get_vlm_description_openai(image_path: Path, prompt: str, model: str, api_key: str) -> str:
@@ -43,9 +82,7 @@ def get_vlm_description_openai(image_path: Path, prompt: str, model: str, api_ke
     from openai import OpenAI
 
     client = OpenAI(api_key=api_key)
-    with open(image_path, "rb") as f:
-        image_data = base64.b64encode(f.read()).decode("utf-8")
-    media = _media_type(image_path)
+    image_data, media = _load_image_for_api(image_path)
 
     response = client.chat.completions.create(
         model=model,
@@ -71,9 +108,7 @@ def get_vlm_description_anthropic(image_path: Path, prompt: str, model: str, api
     import anthropic
 
     client = anthropic.Anthropic(api_key=api_key)
-    with open(image_path, "rb") as f:
-        image_data = base64.b64encode(f.read()).decode("utf-8")
-    media = _media_type(image_path)
+    image_data, media = _load_image_for_api(image_path)
 
     response = client.messages.create(
         model=model,
@@ -127,6 +162,7 @@ def analyze_images(
         "phenotypic features in this fluorescence microscopy image. Be concise.",
     )
     rows = []
+    last_error = None
     for path in image_paths:
         try:
             if backend == "openai":
@@ -138,8 +174,11 @@ def analyze_images(
             embedding = get_embedding(description, api_key)
             rows.append({"image": path.name, "description": description, "embedding": json.dumps(embedding)})
         except Exception as e:
+            last_error = e
             print(f"  Error {path.name}: {e}")
     if not rows:
+        if last_error:
+            raise RuntimeError(f"Analysis failed: {last_error}") from last_error
         return None
     return pd.DataFrame(rows)
 

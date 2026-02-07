@@ -268,13 +268,13 @@ with tab2:
             with open(hic_output / "heatmap.html") as f:
                 st.components.v1.html(f.read(), height=550, scrolling=False)
         else:
-            st.image(str(hic_output / "heatmap.png"), use_container_width=True)
+            st.image(str(hic_output / "heatmap.png"), width="stretch")
         if (hic_output / "distance_decay.html").exists():
             with open(hic_output / "distance_decay.html") as f:
                 st.components.v1.html(f.read(), height=450, scrolling=False)
         if not qc.empty:
             st.subheader("QC stats (full)")
-            st.dataframe(qc, use_container_width=True, hide_index=True)
+            st.dataframe(qc, width="stretch", hide_index=True)
     else:
         st.info(
             "Run the Hi-C pipeline to see the chromatin heatmap: `python scripts/01_download_data.py` "
@@ -316,7 +316,7 @@ with tab3:
                 color_discrete_sequence=["#2ecc71"],
             )
             fig_area.update_layout(margin=dict(l=20, r=20, t=40, b=20), height=280)
-            st.plotly_chart(fig_area, use_container_width=True)
+            st.plotly_chart(fig_area, width="stretch")
         with col_b:
             fig_circ = px.histogram(
                 df,
@@ -327,7 +327,7 @@ with tab3:
                 color_discrete_sequence=["#3498db"],
             )
             fig_circ.update_layout(margin=dict(l=20, r=20, t=40, b=20), height=280)
-            st.plotly_chart(fig_circ, use_container_width=True)
+            st.plotly_chart(fig_circ, width="stretch")
 
         # Nuclei count per image (bar chart)
         counts = df.groupby("image").size().reset_index(name="n_nuclei")
@@ -342,14 +342,14 @@ with tab3:
         fig_counts.update_layout(
             xaxis_tickangle=-45, margin=dict(l=20, r=20, t=40, b=80), height=300
         )
-        st.plotly_chart(fig_counts, use_container_width=True)
+        st.plotly_chart(fig_counts, width="stretch")
 
         st.subheader("Nuclei features (table)")
-        st.dataframe(df.head(100), use_container_width=True, hide_index=True)
+        st.dataframe(df.head(100), width="stretch", hide_index=True)
         if (micro_output / "summary_stats.csv").exists():
             summary = pd.read_csv(micro_output / "summary_stats.csv", index_col=0)
             st.subheader("Summary per image")
-            st.dataframe(summary, use_container_width=True, hide_index=True)
+            st.dataframe(summary, width="stretch", hide_index=True)
         overlays = list((micro_output / "overlays").glob("*.png"))
         if overlays:
             st.subheader("Segmentation overlays (raw → segmented)")
@@ -360,11 +360,11 @@ with tab3:
                 key="overlay_sel",
             )
             if sel:
-                st.image(str(sel), use_container_width=True)
+                st.image(str(sel), width="stretch")
             cols = st.columns(min(3, len(overlays)))
             for i, p in enumerate(overlays[:6]):
                 cols[i % 3].image(
-                    str(p), caption=p.stem[:30] + "...", use_container_width=True
+                    str(p), caption=p.stem[:30] + "...", width="stretch"
                 )
     else:
         st.info(
@@ -380,6 +380,36 @@ with tab4:
         "and phenotypic features in your microscopy images — no manual annotation needed."
     )
     micro_output = _resolve_output("microscopy")
+
+    # Rate limiting: load config and init session state
+    import time
+    import yaml as _yaml
+    _rate_cfg = {}
+    if (ROOT / "config.yaml").exists():
+        with open(ROOT / "config.yaml") as _f:
+            _rate_cfg = (_yaml.safe_load(_f) or {}).get("rate_limit", {})
+    _max_analyses = _rate_cfg.get("max_analyses_per_session", 10)
+    _min_seconds = _rate_cfg.get("min_seconds_between_analyses", 30)
+    _warn_at = _rate_cfg.get("warning_at_remaining", 2)
+    if "vlm_analysis_count" not in st.session_state:
+        st.session_state["vlm_analysis_count"] = 0
+    if "vlm_last_analysis_time" not in st.session_state:
+        st.session_state["vlm_last_analysis_time"] = 0.0
+
+    def _check_rate_limit():
+        count = st.session_state["vlm_analysis_count"]
+        last = st.session_state["vlm_last_analysis_time"]
+        elapsed = time.time() - last
+        if count >= _max_analyses:
+            return False, f"Session limit reached ({_max_analyses} analyses). Refresh the page to reset."
+        if last > 0 and elapsed < _min_seconds:
+            wait = int(_min_seconds - elapsed)
+            return False, f"Please wait {wait} seconds before another analysis."
+        return True, None
+
+    def _record_analysis():
+        st.session_state["vlm_analysis_count"] = st.session_state.get("vlm_analysis_count", 0) + 1
+        st.session_state["vlm_last_analysis_time"] = time.time()
     # VLM output written to output/microscopy/; may also exist in deploy_data
     vlm_output_path = ROOT / "output" / "microscopy" / "vlm_output.csv"
     if not vlm_output_path.exists():
@@ -406,6 +436,15 @@ with tab4:
     else:
         st.success("✓ API key configured — you're ready to analyze images.")
 
+    # Usage / rate limit warning
+    _remaining = _max_analyses - st.session_state["vlm_analysis_count"]
+    if _remaining <= _warn_at and _remaining > 0:
+        st.warning(f"⚠️ {_remaining} analysis(es) remaining this session. Limit: {_max_analyses} per session.")
+    elif _remaining <= 0:
+        st.error(f"Session limit reached ({_max_analyses} analyses). Refresh the page to get a new allowance.")
+    else:
+        st.caption(f"Usage: {st.session_state['vlm_analysis_count']}/{_max_analyses} analyses this session • min {_min_seconds}s between runs")
+
     # Option 1: Upload your own images
     st.markdown("#### 📤 Upload your microscopy images")
     st.markdown("Drop your images below for instant AI phenotype analysis. Supports PNG, JPG, and TIFF.")
@@ -416,7 +455,10 @@ with tab4:
         key="vlm_upload",
     )
     if st.button("🔍 Analyze with AI", key="vlm_upload_btn", type="primary"):
-        if not api_key or not str(api_key).strip():
+        ok, err = _check_rate_limit()
+        if not ok:
+            st.error(err)
+        elif not api_key or not str(api_key).strip():
             st.warning("Please enter your OpenAI API key or configure Streamlit secrets.")
         elif not uploaded_files:
             st.warning("Please upload at least one image.")
@@ -426,41 +468,48 @@ with tab4:
             import yaml
 
             with st.spinner("Analyzing uploaded images..."):
-                spec = importlib.util.spec_from_file_location(
-                    "vlm_script", ROOT / "scripts" / "05_vlm_analysis.py"
-                )
-                vlm_module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(vlm_module)
-                with open(ROOT / "config.yaml") as f:
-                    vlm_config = yaml.safe_load(f)
-                with tempfile.TemporaryDirectory() as tmpdir:
-                    tmpdir_path = Path(tmpdir).resolve()
-                    paths = []
-                    max_file_size = 50 * 1024 * 1024  # 50 MB per file
-                    for i, f in enumerate(uploaded_files[:10]):  # limit to 10
-                        data = f.getvalue()
-                        if len(data) > max_file_size:
-                            continue  # Skip oversized files
-                        # Sanitize filename to prevent path traversal
-                        safe_name = Path(f.name).name or f"image_{i}"
-                        p = (tmpdir_path / safe_name).resolve()
-                        if not str(p).startswith(str(tmpdir_path)):
-                            continue  # Skip invalid filenames
-                        p.write_bytes(data)
-                        paths.append(p)
-                    df = None
-                    if paths:
-                        df = vlm_module.analyze_images(
-                            paths, str(api_key).strip(), vlm_config
-                        )
-                if df is not None and len(df) > 0:
-                    st.session_state["vlm_uploaded_results"] = df
-                    st.success(f"✓ Successfully analyzed {len(df)} image(s)! Results below.")
-                    st.rerun()
-                elif not paths:
-                    st.error("No valid images to analyze.")
-                else:
-                    st.error("Analysis failed. Check the terminal for details.")
+                try:
+                    spec = importlib.util.spec_from_file_location(
+                        "vlm_script", ROOT / "scripts" / "05_vlm_analysis.py"
+                    )
+                    vlm_module = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(vlm_module)
+                    with open(ROOT / "config.yaml") as f:
+                        vlm_config = yaml.safe_load(f)
+                    with tempfile.TemporaryDirectory() as tmpdir:
+                        tmpdir_path = Path(tmpdir).resolve()
+                        paths = []
+                        img_bytes = {}
+                        max_file_size = 50 * 1024 * 1024  # 50 MB per file
+                        for i, f in enumerate(uploaded_files[:10]):  # limit to 10
+                            data = f.getvalue()
+                            if len(data) > max_file_size:
+                                continue  # Skip oversized files
+                            # Sanitize filename to prevent path traversal
+                            safe_name = Path(f.name).name or f"image_{i}"
+                            p = (tmpdir_path / safe_name).resolve()
+                            if not str(p).startswith(str(tmpdir_path)):
+                                continue  # Skip invalid filenames
+                            p.write_bytes(data)
+                            paths.append(p)
+                            img_bytes[safe_name] = data
+                        df = None
+                        if paths:
+                            df = vlm_module.analyze_images(
+                                paths, str(api_key).strip(), vlm_config
+                            )
+                            st.session_state["vlm_uploaded_images"] = img_bytes
+                    if df is not None and len(df) > 0:
+                        _record_analysis()
+                        st.session_state["vlm_uploaded_results"] = df
+                        st.success(f"✓ Successfully analyzed {len(df)} image(s)! Results below.")
+                        st.rerun()
+                    elif not paths:
+                        st.error("No valid images to analyze.")
+                    else:
+                        st.error("Analysis failed. Check the terminal for details.")
+                except Exception as e:
+                    st.error(f"Analysis failed: **{str(e)}**")
 
     # Option 2: Run on pipeline overlays (when available)
     if overlay_dir.exists() and list(overlay_dir.glob("*.png")):
@@ -468,7 +517,10 @@ with tab4:
         st.markdown("#### 📁 Or analyze pipeline overlays")
         st.caption("Use pre-segmented overlays from the microscopy pipeline.")
         if st.button("Run AI on pipeline overlays", key="vlm_run_btn"):
-            if api_key and str(api_key).strip():
+            ok, err = _check_rate_limit()
+            if not ok:
+                st.error(err)
+            elif api_key and str(api_key).strip():
                 import importlib.util
                 import yaml
 
@@ -497,6 +549,7 @@ with tab4:
                         else:
                             os.environ.pop("OPENAI_API_KEY", None)
                 if result is not None:
+                    _record_analysis()
                     st.success("VLM analysis complete. Refreshing...")
                     st.rerun()
                 else:
@@ -522,16 +575,41 @@ with tab4:
         from sklearn.cluster import KMeans
         st.subheader("AI phenotype descriptions")
         st.caption(
-            "Each image was analyzed by a Vision-Language Model. Expand any row to read the full description."
+            "Each image was analyzed by a Vision-Language Model. View image and description side by side."
         )
         if "vlm_uploaded_results" in st.session_state:
             if st.button("Clear uploaded results", key="vlm_clear"):
                 del st.session_state["vlm_uploaded_results"]
+                st.session_state.pop("vlm_uploaded_images", None)
                 st.rerun()
-        # Table with expandable descriptions
-        for _, row in vlm_df.iterrows():
-            with st.expander(f"**{row['image']}**"):
-                st.write(row["description"])
+        # View mode: cards or one-at-a-time
+        uploaded_imgs = st.session_state.get("vlm_uploaded_images", {})
+        view_mode = st.radio("View", ["All cards", "One at a time"], horizontal=True, key="vlm_view_mode")
+        rows_list = list(vlm_df.iterrows())
+        if view_mode == "One at a time" and len(rows_list) > 1:
+            sel_idx = st.selectbox("Select image", range(len(rows_list)), format_func=lambda i: rows_list[i][1]["image"], key="vlm_sel")
+            rows_list = [rows_list[sel_idx]]
+        for idx, (_, row) in enumerate(rows_list):
+            img_name = row["image"]
+            desc = row["description"]
+            # Get image: uploaded bytes or overlay file
+            img_src = None
+            if img_name in uploaded_imgs:
+                img_src = uploaded_imgs[img_name]
+            else:
+                ov_path = overlay_dir / img_name
+                if ov_path.exists():
+                    img_src = ov_path.read_bytes()
+            with st.container(border=True):
+                col_img, col_txt = st.columns([1, 2], gap="large")
+                with col_img:
+                    if img_src:
+                        st.image(img_src, caption=img_name[:40] + ("..." if len(img_name) > 40 else ""), width="stretch")
+                    else:
+                        st.caption(f"📷 {img_name}")
+                with col_txt:
+                    st.markdown(f"**{img_name}**")
+                    st.write(desc)
         # VLM-derived strata (k-means on embeddings)
         embeddings = vlm_df["embedding"].apply(json.loads).tolist()
         if len(embeddings) >= 2:
@@ -562,7 +640,7 @@ with tab4:
                 yaxis_title="Images",
                 height=250,
             )
-            st.plotly_chart(fig_vlm, use_container_width=True)
+            st.plotly_chart(fig_vlm, width="stretch")
     else:
         st.info(
             "👆 **Upload images above** and click **Analyze with AI** to get started. "
@@ -629,7 +707,7 @@ with tab4:
                     height=280,
                     margin=dict(l=20, r=20, t=40, b=20),
                 )
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width="stretch")
 
         st.subheader("Stratum distribution")
         fig_bar = go.Figure(
@@ -646,7 +724,7 @@ with tab4:
             yaxis_title="Nuclei count",
             height=300,
         )
-        st.plotly_chart(fig_bar, use_container_width=True)
+        st.plotly_chart(fig_bar, width="stretch")
     else:
         st.info(
             "Run the microscopy pipeline to see morphology–chromatin integration: "
@@ -665,6 +743,16 @@ with tab5:
         "This is an independent demo project and is not affiliated with, "
         "endorsed by, or reviewed by IMBA or the Gerlich lab."
     )
+    with st.expander("📋 Privacy & terms (public deployment)", expanded=False):
+        st.markdown("""
+        **Data processing:** Images you upload are sent to OpenAI for AI analysis. OpenAI's [privacy policy](https://openai.com/policies/privacy-policy) applies to that processing.
+
+        **Storage:** We do not store your images or descriptions on our servers. Session data is cleared when you leave.
+
+        **Intended use:** For research and educational purposes. This tool is not intended for clinical or medical use. Results are not medical advice.
+
+        **Your responsibility:** Only upload images you have the right to share and analyze.
+        """)
     st.subheader("Pipeline workflow")
     import matplotlib.pyplot as plt
     import matplotlib.patches as mpatches
