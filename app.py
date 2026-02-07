@@ -34,7 +34,7 @@ st.set_page_config(
     page_title="Chromosome + Cell Pipeline",
     page_icon="🧬",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
 )
 
 # Custom CSS for a more polished, encouraging UI
@@ -117,6 +117,21 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
+
+# Sidebar
+with st.sidebar:
+    st.markdown("## 🧬 Chromosome + Cell Pipeline")
+    st.markdown("---")
+    st.markdown("**Sections**")
+    st.markdown("""
+    - 📊 **QC Dashboard** — Quality control metrics
+    - 🔬 **Hi-C Explorer** — Chromatin heatmaps
+    - 🔭 **Nuclei Analyzer** — Segmentation & features
+    - ✨ **AI Integration** — VLM phenotype analysis
+    - ℹ️ **About** — Pipeline info & setup
+    """)
+    st.markdown("---")
+    st.caption("Use the tabs above to switch sections.")
 
 # Hero section
 st.markdown("""
