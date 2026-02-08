@@ -6,7 +6,7 @@ This guide explains how to deploy the Streamlit dashboard publicly so others can
 
 ## Option 1: Streamlit Community Cloud (Recommended)
 
-[Streamlit Community Cloud](https://share.streamlit.io/) offers free hosting for Streamlit apps.
+[Streamlit Community Cloud](https://share.streamlit.io/) offers free hosting for Streamlit apps. **Live demo:** [chromosome-cell-pipeline.streamlit.app](https://chromosome-cell-pipeline-potip23aylajefym9mqh67.streamlit.app)
 
 ### Prerequisites
 

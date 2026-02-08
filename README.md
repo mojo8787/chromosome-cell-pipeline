@@ -1,5 +1,6 @@
 # Chromosome + Cell Mini-Pipeline
 
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://chromosome-cell-pipeline-potip23aylajefym9mqh67.streamlit.app)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18500690.svg)](https://doi.org/10.5281/zenodo.18500690)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
@@ -21,7 +22,7 @@ Both pipelines feed into a unified **Streamlit dashboard** for interactive explo
 
 ### Dashboard
 
-The dashboard (`streamlit run app.py`) has five sections (sidebar navigation):
+**[Try it live](https://chromosome-cell-pipeline-potip23aylajefym9mqh67.streamlit.app)** · or run locally: `streamlit run app.py`. The dashboard has five sections (sidebar navigation):
 
 - **QC Dashboard** — Shared QC view for both pipelines; pass/warn/fail flags and thresholds
 - **Hi-C Explorer** — Interactive contact heatmap, distance-decay plot, and QC stats table
@@ -142,6 +143,8 @@ Datasets are **downloaded at runtime**; not redistributed in this repository.
 **Citations:** BBBC — Ljosa V, Sokolnicki KL, Carpenter AE (2012). *Nature Methods* 9(7):637. HFF Micro-C — 4D Nucleome Consortium; see cooltools documentation.
 
 ## Deploying Publicly
+
+**Live demo:** [chromosome-cell-pipeline.streamlit.app](https://chromosome-cell-pipeline-potip23aylajefym9mqh67.streamlit.app)
 
 See [DEPLOYMENT.md](DEPLOYMENT.md) for instructions on deploying to Streamlit Community Cloud or other hosts. [PUBLIC_DEPLOYMENT_PLAN.md](PUBLIC_DEPLOYMENT_PLAN.md) covers best practices (rate limiting, secrets, cost control). [DEPLOY_CHECKLIST.md](DEPLOY_CHECKLIST.md) is a quick pre-deploy checklist. The app includes `deploy_data/` with sample outputs so it works out of the box for public visitors.
 

@@ -1,6 +1,8 @@
 # Public Deployment Plan — Chromosome + Cell Pipeline
 
-Best-practices checklist and plan for deploying this app publicly. Based on Streamlit, OpenAI, and general security guidelines.
+Best-practices checklist and plan for deploying this app publicly.
+
+**Live demo:** [chromosome-cell-pipeline.streamlit.app](https://chromosome-cell-pipeline-potip23aylajefym9mqh67.streamlit.app) Based on Streamlit, OpenAI, and general security guidelines.
 
 ---
 
