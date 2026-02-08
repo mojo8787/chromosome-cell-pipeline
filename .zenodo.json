@@ -7,7 +7,7 @@
     }
   ],
   "title": "Chromosome + Cell Mini-Pipeline",
-  "description": "A combined genomics and microscopy analysis pipeline demonstrating end-to-end Hi-C chromatin analysis and nuclei segmentation. Uses cooltools/cooler for Hi-C (compatible with HiCognition) and StarDist for nuclei segmentation. Built for reproducibility and alignment with chromosome organization research.",
+  "description": "A combined genomics and microscopy analysis pipeline demonstrating end-to-end Hi-C chromatin analysis and nuclei segmentation. Uses cooltools/cooler for Hi-C (compatible with HiCognition) and StarDist for nuclei segmentation. Includes AI-powered phenotype analysis (OpenAI Vision) with structured outputs. Streamlit dashboard with sidebar navigation, rate limiting, and public deployment support. Built for reproducibility and alignment with chromosome organization research.",
   "keywords": [
     "Hi-C",
     "chromatin",
@@ -16,7 +16,10 @@
     "nuclei segmentation",
     "StarDist",
     "microscopy",
-    "bioinformatics"
+    "bioinformatics",
+    "vision-language model",
+    "OpenAI",
+    "phenotype analysis"
   ],
   "license": "MIT"
 }

@@ -18,8 +18,11 @@ keywords:
   - StarDist
   - microscopy
   - bioinformatics
+  - vision-language model
+  - phenotype analysis
 abstract: >
   A combined genomics and microscopy analysis pipeline demonstrating
-  end-to-end Hi-C chromatin analysis and nuclei segmentation, built for
-  reproducibility and alignment with chromosome organization research
-  (e.g., HiCognition at the Gerlich lab, IMBA).
+  end-to-end Hi-C chromatin analysis and nuclei segmentation, with
+  AI-powered phenotype analysis (OpenAI Vision, structured outputs).
+  Built for reproducibility, public deployment, and alignment with
+  chromosome organization research (e.g., HiCognition at the Gerlich lab, IMBA).

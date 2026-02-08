@@ -21,13 +21,13 @@ Both pipelines feed into a unified **Streamlit dashboard** for interactive explo
 
 ### Dashboard
 
-The dashboard (`streamlit run app.py`) has five tabs:
+The dashboard (`streamlit run app.py`) has five sections (sidebar navigation):
 
 - **QC Dashboard** — Shared QC view for both pipelines; pass/warn/fail flags and thresholds
 - **Hi-C Explorer** — Interactive contact heatmap, distance-decay plot, and QC stats table
 - **Nuclei Analyzer** — Nuclei features table, per-image summary stats, and segmentation overlays
-- **Integration** — Morphology–chromatin link: nuclei stratified by area/circularity with synthetic Hi-C patterns (conceptual demo)
-- **About** — Joint workflow diagram and setup instructions
+- **AI Integration** — Upload microscopy images for AI phenotype analysis (OpenAI Vision); structured outputs (nuclei count, morphology, phenotype); rate limiting for public deployment
+- **About** — Joint workflow diagram, setup instructions, and privacy/terms
 
 ## Sample Outputs
 
@@ -97,7 +97,7 @@ streamlit run app.py
 |----------|---------|
 | **Hi-C** | `output/hic/heatmap.png`, `heatmap.html`, `distance_decay.html`, `qc_stats.csv` |
 | **Microscopy** | `output/microscopy/nuclei_features.csv`, `summary_stats.csv`, `overlays/*.png` |
-| **VLM** | `output/microscopy/vlm_output.csv` (descriptions + embeddings) |
+| **VLM** | `output/microscopy/vlm_output.csv` (descriptions, embeddings, nuclei_count, morphology, phenotype) |
 | **Integration** | In-dashboard only (morphology stratification + synthetic Hi-C + VLM phenotypes) |
 
 ## Configuration
@@ -106,7 +106,8 @@ Key options in `config.yaml`:
 
 - **Hi-C:** `resolution` (100 kb), `chromosomes` (chr2, chr17), `download_dataset`
 - **Microscopy:** `subset_size` (20 images for demo; set to `null` for all), `stardist_model`
-- **VLM:** `backend` (openai/anthropic), `model`, `api_key_env`, `max_images`, `prompt`
+- **VLM:** `backend` (openai/anthropic), `model`, `api_key_env`, `max_images`, `prompt`, `structured_output` (JSON schema), `server_key_only` (public deploy)
+- **Rate limiting:** `rate_limit.max_analyses_per_session`, `min_seconds_between_analyses`
 - **QC thresholds:** `qc_thresholds.hic` (min_bins, max_sparsity), `qc_thresholds.microscopy` (min_nuclei_per_image, min_images, circularity range)
 
 If StarDist or TensorFlow is unavailable, the microscopy pipeline falls back to watershed-based segmentation.
@@ -142,7 +143,7 @@ Datasets are **downloaded at runtime**; not redistributed in this repository.
 
 ## Deploying Publicly
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for instructions on deploying to Streamlit Community Cloud or other hosts. The app includes `deploy_data/` with sample outputs so it works out of the box for public visitors.
+See [DEPLOYMENT.md](DEPLOYMENT.md) for instructions on deploying to Streamlit Community Cloud or other hosts. [PUBLIC_DEPLOYMENT_PLAN.md](PUBLIC_DEPLOYMENT_PLAN.md) covers best practices (rate limiting, secrets, cost control). [DEPLOY_CHECKLIST.md](DEPLOY_CHECKLIST.md) is a quick pre-deploy checklist. The app includes `deploy_data/` with sample outputs so it works out of the box for public visitors.
 
 ## Project Structure
 
@@ -173,6 +174,17 @@ chromosome-cell-pipeline/
 ## Citation
 
 See [CITATION.cff](CITATION.cff) for citation metadata.
+
+## Releasing / Zenodo
+
+To create a new version for Zenodo:
+
+1. Update `CHANGELOG.md` with the release date
+2. Commit all changes and push to `main`
+3. Create a GitHub release: **Releases** → **Create a new release** → tag `v1.1.0` (or next version)
+4. If Zenodo is connected to your repo, it will automatically archive the new version and assign a DOI
+
+See [Zenodo-GitHub integration](https://docs.zenodo.org/guides/github/) for setup.
 
 ## License
 
