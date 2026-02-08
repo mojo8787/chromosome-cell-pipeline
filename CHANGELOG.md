@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.2.0] — 2026-02-06
+
+### Added
+
+- **Generative phenotyping** — Joint Hi-C + microscopy analysis: send both images to the VLM and ask about relationships between chromatin contact patterns (TAD boundaries) and nuclear staining. Config: `vlm.joint_prompt`. Expander in AI Integration tab.
+
+---
+
 ## [1.1.0] — 2025-02-06
 
 ### Added

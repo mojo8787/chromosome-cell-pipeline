@@ -642,6 +642,108 @@ elif section == "✨ AI Integration":
             else:
                 st.warning("Please enter your OpenAI API key.")
 
+    # Generative phenotyping: Hi-C + microscopy (joint VLM analysis)
+    hic_output = _resolve_output("hic")
+    hic_heatmap_path = hic_output / "heatmap.png"
+    if not hic_heatmap_path.exists():
+        hic_heatmap_path = ROOT / "deploy_data" / "hic" / "heatmap.png"
+    if hic_heatmap_path.exists() and api_key:
+        st.markdown("---")
+        with st.expander("🔬 Generative phenotyping: Hi-C + microscopy", expanded=False):
+            st.caption(
+                "Send both a Hi-C contact map and a microscopy image to the VLM. "
+                "Ask about relationships between chromatin organization and nuclear morphology."
+            )
+            joint_micro_upload = st.file_uploader(
+                "Microscopy image for joint analysis",
+                type=["png", "jpg", "jpeg", "tif", "tiff"],
+                key="joint_micro_upload",
+            )
+            overlay_paths = sorted(overlay_dir.glob("*.png")) if overlay_dir.exists() else []
+            overlay_choice = None
+            if overlay_paths and not joint_micro_upload:
+                st.caption("Or select from pipeline overlays:")
+                overlay_choice = st.selectbox(
+                    "Overlay",
+                    [None] + overlay_paths,
+                    format_func=lambda p: "—" if p is None else p.name,
+                    key="joint_overlay",
+                )
+            if st.button("Run generative phenotyping", key="joint_btn"):
+                ok, err = _check_rate_limit()
+                if not ok:
+                    st.error(err)
+                elif not joint_micro_upload and not overlay_choice:
+                    st.warning("Upload a microscopy image or select an overlay.")
+                else:
+                    import tempfile
+                    import importlib.util
+                    import yaml
+
+                    micro_path = None
+                    if joint_micro_upload:
+                        with tempfile.TemporaryDirectory() as tmpdir:
+                            micro_path = Path(tmpdir) / Path(joint_micro_upload.name).name
+                            micro_path.write_bytes(joint_micro_upload.getvalue())
+                            with st.spinner("Analyzing Hi-C + microscopy (generative phenotyping)..."):
+                                try:
+                                    spec = importlib.util.spec_from_file_location(
+                                        "vlm_script", ROOT / "scripts" / "05_vlm_analysis.py"
+                                    )
+                                    vlm_module = importlib.util.module_from_spec(spec)
+                                    spec.loader.exec_module(vlm_module)
+                                    with open(ROOT / "config.yaml") as f:
+                                        vlm_config = yaml.safe_load(f)
+                                    prompt = vlm_config.get("vlm", {}).get(
+                                        "joint_prompt",
+                                        "Describe the relationship between the chromatin contact patterns in the Hi-C map and the nuclear staining in the microscopy image. Be concise.",
+                                    )
+                                    model = vlm_config.get("vlm", {}).get("model", "gpt-4o")
+                                    result = vlm_module.get_joint_vlm_description_openai(
+                                        micro_path,
+                                        hic_heatmap_path,
+                                        prompt,
+                                        model,
+                                        str(api_key).strip(),
+                                    )
+                                    _record_analysis()
+                                    st.session_state["joint_phenotyping_result"] = result
+                                    st.success("✓ Generative phenotyping complete.")
+                                    st.rerun()
+                                except Exception as e:
+                                    st.error(f"Analysis failed: **{str(e)}**")
+                    elif overlay_choice and overlay_choice.exists():
+                        with st.spinner("Analyzing Hi-C + microscopy (generative phenotyping)..."):
+                            try:
+                                spec = importlib.util.spec_from_file_location(
+                                    "vlm_script", ROOT / "scripts" / "05_vlm_analysis.py"
+                                )
+                                vlm_module = importlib.util.module_from_spec(spec)
+                                spec.loader.exec_module(vlm_module)
+                                with open(ROOT / "config.yaml") as f:
+                                    vlm_config = yaml.safe_load(f)
+                                prompt = vlm_config.get("vlm", {}).get(
+                                    "joint_prompt",
+                                    "Describe the relationship between the chromatin contact patterns in the Hi-C map and the nuclear staining in the microscopy image. Be concise.",
+                                )
+                                model = vlm_config.get("vlm", {}).get("model", "gpt-4o")
+                                result = vlm_module.get_joint_vlm_description_openai(
+                                    overlay_choice,
+                                    hic_heatmap_path,
+                                    prompt,
+                                    model,
+                                    str(api_key).strip(),
+                                )
+                                _record_analysis()
+                                st.session_state["joint_phenotyping_result"] = result
+                                st.success("✓ Generative phenotyping complete.")
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Analysis failed: **{str(e)}**")
+            if "joint_phenotyping_result" in st.session_state:
+                st.markdown("**VLM response:**")
+                st.write(st.session_state["joint_phenotyping_result"])
+
     # VLM Phenotype Descriptions (when available: from upload or pipeline output)
     import pandas as pd
 

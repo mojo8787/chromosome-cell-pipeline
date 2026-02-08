@@ -142,6 +142,41 @@ def get_vlm_description_openai(
     return content
 
 
+def get_joint_vlm_description_openai(
+    microscopy_path: Path,
+    hic_path: Path,
+    prompt: str,
+    model: str,
+    api_key: str,
+) -> str:
+    """Send both Hi-C map and microscopy image to OpenAI for joint generative phenotyping.
+    Returns free-form text (no structured schema)."""
+    from openai import OpenAI
+
+    client = OpenAI(api_key=api_key)
+    mic_data, mic_media = _load_image_for_api(microscopy_path)
+    hic_data, hic_media = _load_image_for_api(hic_path)
+
+    content = [
+        {"type": "text", "text": prompt},
+        {
+            "type": "image_url",
+            "image_url": {"url": f"data:{hic_media};base64,{hic_data}"},
+        },
+        {
+            "type": "image_url",
+            "image_url": {"url": f"data:{mic_media};base64,{mic_data}"},
+        },
+    ]
+
+    response = client.chat.completions.create(
+        model=model,
+        messages=[{"role": "user", "content": content}],
+        max_tokens=500,
+    )
+    return response.choices[0].message.content.strip()
+
+
 def get_vlm_description_anthropic(
     image_path: Path, prompt: str, model: str, api_key: str
 ) -> str:

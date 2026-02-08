@@ -27,7 +27,7 @@ Both pipelines feed into a unified **Streamlit dashboard** for interactive explo
 - **QC Dashboard** — Shared QC view for both pipelines; pass/warn/fail flags and thresholds
 - **Hi-C Explorer** — Interactive contact heatmap, distance-decay plot, and QC stats table
 - **Nuclei Analyzer** — Nuclei features table, per-image summary stats, and segmentation overlays
-- **AI Integration** — Upload microscopy images for AI phenotype analysis (OpenAI Vision); structured outputs (nuclei count, morphology, phenotype); rate limiting for public deployment
+- **AI Integration** — Upload microscopy images for AI phenotype analysis (OpenAI Vision); structured outputs (nuclei count, morphology, phenotype); generative phenotyping (Hi-C + microscopy joint analysis); rate limiting for public deployment
 - **About** — Joint workflow diagram, setup instructions, and privacy/terms
 
 ## Sample Outputs
@@ -107,7 +107,7 @@ Key options in `config.yaml`:
 
 - **Hi-C:** `resolution` (100 kb), `chromosomes` (chr2, chr17), `download_dataset`
 - **Microscopy:** `subset_size` (20 images for demo; set to `null` for all), `stardist_model`
-- **VLM:** `backend` (openai/anthropic), `model`, `api_key_env`, `max_images`, `prompt`, `structured_output` (JSON schema), `server_key_only` (public deploy)
+- **VLM:** `backend` (openai/anthropic), `model`, `api_key_env`, `max_images`, `prompt`, `structured_output` (JSON schema), `joint_prompt` (Hi-C + microscopy), `server_key_only` (public deploy)
 - **Rate limiting:** `rate_limit.max_analyses_per_session`, `min_seconds_between_analyses`
 - **QC thresholds:** `qc_thresholds.hic` (min_bins, max_sparsity), `qc_thresholds.microscopy` (min_nuclei_per_image, min_images, circularity range)
 

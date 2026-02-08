@@ -39,10 +39,11 @@ This guide explains how to deploy the Streamlit dashboard publicly so others can
 
 - The app will be available at `https://your-app-name.streamlit.app`.
 - **Hi-C and Microscopy tabs:** Show sample data if `deploy_data/` is present; otherwise they show "Run the pipeline first".
-- **VLM (Integration tab):**
+- **AI Integration tab:**
   - **Option A (with secrets):** If you add `OPENAI_API_KEY` to Streamlit secrets, visitors can use VLM without entering a key.
   - **Option B (without secrets):** Visitors enter their own API key in the password field.
-  - **Image upload:** Visitors can upload their own microscopy images (PNG, JPG, TIFF) for VLM phenotype analysis.
+  - **Image upload:** Visitors can upload microscopy images (PNG, JPG, TIFF) for phenotype analysis.
+  - **Generative phenotyping:** Hi-C + microscopy joint analysis (expander in AI Integration). Uses `deploy_data/hic/heatmap.png` when pipeline output is not available.
 
 ### Build Notes
 

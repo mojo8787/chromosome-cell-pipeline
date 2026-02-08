@@ -27,6 +27,8 @@ vlm:
   prompt: "Describe the nuclei morphology, chromatin distribution, and any notable phenotypic features in this fluorescence microscopy image. Be concise."
   # structured_output: true = return JSON {nuclei_count, morphology, phenotype} (OpenAI only)
   structured_output: true
+  # Joint Hi-C + microscopy: generative phenotyping prompt (OpenAI only)
+  joint_prompt: "You are shown two images. Image 1 (top): a Hi-C contact map showing chromatin organization, TAD boundaries, and contact domains. Image 2 (bottom): a fluorescence microscopy image of nuclei. Describe the relationship between the chromatin contact patterns in the Hi-C map and the nuclear staining/morphology in the microscopy image. What might they tell us together? Be concise and scientific."
 
 # Rate limiting for AI analysis ( protects your API credits )
 # Public deployment: 5/session, 60s between runs
