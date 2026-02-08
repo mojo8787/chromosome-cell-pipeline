@@ -78,18 +78,41 @@ def _load_image_for_api(image_path: Path) -> tuple[bytes, str]:
     return data, _media_type(image_path)
 
 
+PHENOTYPE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "nuclei_count": {
+            "type": "integer",
+            "description": "Estimated number of nuclei. Use 0 if not a microscopy image or not applicable.",
+        },
+        "morphology": {
+            "type": "string",
+            "description": "Description of nuclei morphology (shape, size, distribution).",
+        },
+        "phenotype": {
+            "type": "string",
+            "description": "Phenotypic features observed (chromatin, staining, abnormalities).",
+        },
+    },
+    "required": ["nuclei_count", "morphology", "phenotype"],
+    "additionalProperties": False,
+}
+
+
 def get_vlm_description_openai(
-    image_path: Path, prompt: str, model: str, api_key: str
-) -> str:
-    """Get phenotype description from OpenAI vision model."""
+    image_path: Path, prompt: str, model: str, api_key: str, structured: bool = False
+) -> str | dict:
+    """Get phenotype description from OpenAI vision model.
+    If structured=True, returns dict with nuclei_count, morphology, phenotype.
+    Otherwise returns free-form string."""
     from openai import OpenAI
 
     client = OpenAI(api_key=api_key)
     image_data, media = _load_image_for_api(image_path)
 
-    response = client.chat.completions.create(
-        model=model,
-        messages=[
+    kwargs = {
+        "model": model,
+        "messages": [
             {
                 "role": "user",
                 "content": [
@@ -101,9 +124,22 @@ def get_vlm_description_openai(
                 ],
             }
         ],
-        max_tokens=300,
-    )
-    return response.choices[0].message.content.strip()
+        "max_tokens": 300,
+    }
+    if structured:
+        kwargs["response_format"] = {
+            "type": "json_schema",
+            "json_schema": {
+                "name": "phenotype_analysis",
+                "strict": True,
+                "schema": PHENOTYPE_SCHEMA,
+            },
+        }
+    response = client.chat.completions.create(**kwargs)
+    content = response.choices[0].message.content.strip()
+    if structured:
+        return json.loads(content)
+    return content
 
 
 def get_vlm_description_anthropic(
@@ -155,12 +191,14 @@ def analyze_images(
     api_key: str,
     config: dict,
 ) -> pd.DataFrame | None:
-    """Analyze a list of images with VLM. Returns DataFrame with image, description, embedding."""
+    """Analyze a list of images with VLM. Returns DataFrame with image, description, embedding.
+    If structured_output=True (OpenAI only), adds nuclei_count, morphology, phenotype columns."""
     if not image_paths or not api_key:
         return None
     vlm_cfg = config.get("vlm", {})
     backend = vlm_cfg.get("backend", "openai")
     model = vlm_cfg.get("model", "gpt-4o")
+    structured = vlm_cfg.get("structured_output", False) and backend == "openai"
     prompt = vlm_cfg.get(
         "prompt",
         "Describe the nuclei morphology, chromatin distribution, and any notable "
@@ -171,21 +209,31 @@ def analyze_images(
     for path in image_paths:
         try:
             if backend == "openai":
-                description = get_vlm_description_openai(path, prompt, model, api_key)
-            elif backend == "anthropic":
-                description = get_vlm_description_anthropic(
-                    path, prompt, model, api_key
+                result = get_vlm_description_openai(
+                    path, prompt, model, api_key, structured=structured
                 )
+            elif backend == "anthropic":
+                result = get_vlm_description_anthropic(path, prompt, model, api_key)
             else:
                 return None
-            embedding = get_embedding(description, api_key)
-            rows.append(
-                {
+            if structured and isinstance(result, dict):
+                description = f"{result.get('morphology', '')} {result.get('phenotype', '')}".strip()
+                row = {
                     "image": path.name,
                     "description": description,
-                    "embedding": json.dumps(embedding),
+                    "embedding": json.dumps(get_embedding(description, api_key)),
+                    "nuclei_count": result.get("nuclei_count", 0),
+                    "morphology": result.get("morphology", ""),
+                    "phenotype": result.get("phenotype", ""),
                 }
-            )
+            else:
+                description = str(result)
+                row = {
+                    "image": path.name,
+                    "description": description,
+                    "embedding": json.dumps(get_embedding(description, api_key)),
+                }
+            rows.append(row)
         except Exception as e:
             last_error = e
             print(f"  Error {path.name}: {e}")
@@ -230,6 +278,7 @@ def run_pipeline(
     model = vlm_cfg.get("model", "gpt-4o")
     api_key_env = vlm_cfg.get("api_key_env", "OPENAI_API_KEY")
     max_images = vlm_cfg.get("max_images", 5)
+    structured = vlm_cfg.get("structured_output", False) and backend == "openai"
     prompt = vlm_cfg.get(
         "prompt",
         "Describe the nuclei morphology, chromatin distribution, and any notable "
@@ -260,24 +309,36 @@ def run_pipeline(
     for path in overlay_paths:
         try:
             if backend == "openai":
-                description = get_vlm_description_openai(path, prompt, model, api_key)
-            elif backend == "anthropic":
-                # api_key_env should be ANTHROPIC_API_KEY when backend is anthropic
-                description = get_vlm_description_anthropic(
-                    path, prompt, model, api_key
+                result = get_vlm_description_openai(
+                    path, prompt, model, api_key, structured=structured
                 )
+            elif backend == "anthropic":
+                result = get_vlm_description_anthropic(path, prompt, model, api_key)
             else:
                 print(f"Unknown VLM backend: {backend}")
                 return None
-
-            embedding = get_embedding(description, openai_key)
-            rows.append(
-                {
-                    "image": path.name,
-                    "description": description,
-                    "embedding": json.dumps(embedding),
-                }
-            )
+            if structured and isinstance(result, dict):
+                description = f"{result.get('morphology', '')} {result.get('phenotype', '')}".strip()
+                embedding = get_embedding(description, openai_key)
+                rows.append(
+                    {
+                        "image": path.name,
+                        "description": description,
+                        "embedding": json.dumps(embedding),
+                        "nuclei_count": result.get("nuclei_count", 0),
+                        "morphology": result.get("morphology", ""),
+                        "phenotype": result.get("phenotype", ""),
+                    }
+                )
+            else:
+                description = str(result)
+                rows.append(
+                    {
+                        "image": path.name,
+                        "description": description,
+                        "embedding": json.dumps(get_embedding(description, openai_key)),
+                    }
+                )
             print(f"  Done: {path.name}")
 
         except Exception as e:

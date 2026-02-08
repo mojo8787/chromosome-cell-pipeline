@@ -25,6 +25,8 @@ vlm:
   server_key_only: true
   max_images: 5  # limit for demo to control API cost; null for all
   prompt: "Describe the nuclei morphology, chromatin distribution, and any notable phenotypic features in this fluorescence microscopy image. Be concise."
+  # structured_output: true = return JSON {nuclei_count, morphology, phenotype} (OpenAI only)
+  structured_output: true
 
 # Rate limiting for AI analysis ( protects your API credits )
 # Public deployment: 5/session, 60s between runs

@@ -542,7 +542,39 @@ elif section == "✨ AI Integration":
                                 continue  # Skip invalid filenames
                             p.write_bytes(data)
                             paths.append(p)
-                            img_bytes[safe_name] = data
+                            # Convert TIFF to PNG for display (Streamlit/PIL fails on raw TIFF)
+                            ext = Path(safe_name).suffix.lower()
+                            if ext in (".tif", ".tiff"):
+                                try:
+                                    import io
+                                    import numpy as np
+                                    from PIL import Image
+
+                                    try:
+                                        import tifffile
+
+                                        arr = tifffile.imread(io.BytesIO(data))
+                                    except Exception:
+                                        arr = np.array(Image.open(io.BytesIO(data)))
+                                    arr = np.atleast_2d(arr).astype(np.float64)
+                                    if arr.ndim > 2:
+                                        arr = arr.squeeze()
+                                        if arr.ndim > 2:
+                                            arr = arr[0]
+                                    p2, p98 = np.percentile(arr, (2, 98))
+                                    if p98 > p2:
+                                        arr = np.clip(
+                                            (arr - p2) / (p98 - p2) * 255, 0, 255
+                                        )
+                                    arr = arr.astype(np.uint8)
+                                    img = Image.fromarray(arr, mode="L").convert("RGB")
+                                    buf = io.BytesIO()
+                                    img.save(buf, format="PNG")
+                                    img_bytes[safe_name] = buf.getvalue()
+                                except Exception:
+                                    img_bytes[safe_name] = data
+                            else:
+                                img_bytes[safe_name] = data
                         df = None
                         if paths:
                             df = vlm_module.analyze_images(
@@ -665,17 +697,34 @@ elif section == "✨ AI Integration":
                 col_img, col_txt = st.columns([1, 2], gap="large")
                 with col_img:
                     if img_src:
-                        st.image(
-                            img_src,
-                            caption=img_name[:40]
-                            + ("..." if len(img_name) > 40 else ""),
-                            width="stretch",
-                        )
+                        try:
+                            st.image(
+                                img_src,
+                                caption=img_name[:40]
+                                + ("..." if len(img_name) > 40 else ""),
+                                width="stretch",
+                                output_format="PNG",
+                            )
+                        except Exception:
+                            st.caption(f"📷 {img_name} (preview unavailable)")
                     else:
                         st.caption(f"📷 {img_name}")
                 with col_txt:
                     st.markdown(f"**{img_name}**")
-                    st.write(desc)
+                    has_structured = "nuclei_count" in row and "morphology" in row
+                    if has_structured:
+                        n_count = row.get("nuclei_count", 0)
+                        try:
+                            n_count = int(float(n_count))
+                        except (ValueError, TypeError):
+                            n_count = 0
+                        st.metric("Nuclei count", n_count)
+                        st.markdown("**Morphology:**")
+                        st.write(row.get("morphology", ""))
+                        st.markdown("**Phenotype:**")
+                        st.write(row.get("phenotype", ""))
+                    else:
+                        st.write(desc)
         # VLM-derived strata (k-means on embeddings)
         embeddings = vlm_df["embedding"].apply(json.loads).tolist()
         if len(embeddings) >= 2:
