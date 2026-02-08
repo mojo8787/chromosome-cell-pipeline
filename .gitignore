@@ -15,8 +15,10 @@ __pycache__/
 venv/
 env/
 
-# Streamlit secrets (never commit)
+# Secrets (never commit)
 .streamlit/secrets.toml
+.env
+.env.local
 
 # IDE
 .idea/
